@@ -14,161 +14,62 @@
         <script src="lib/underscore-min.js"></script>
         <script src="lib/bootstrap.min.js"></script>
         <script src="config.js"></script>
+        <script src="script.js"></script>
 
+        <style>
+            h1 {text-align: center;}
+            
+            img {
+                max-width: 300px;
+            }
+
+            .header {
+                border: 10px outset rgb(43, 145, 77);
+                background-color: rgb(230, 252, 238);
+                text-align: center;
+            }
+            .chunk {
+                padding: 20px;
+                text-align: center;
+            }
+            .column {
+                float: left;
+                width: 20%;
+                padding: 5px;
+            }
+            /* Clearfix (clear floats) */
+            .row::after {
+                content: "";
+                clear: both;
+                display: table;
+            }
+
+            .bottom {
+              text-align: center;
+            }
+        </style>
     </head>
     <body>
-        <h1>Spoopify Test</h1>
-        <p>This is the spotify test website.</p>
-        
-        <p>
-            <a id=ResetButton href="https://alphaq13.github.io/Spotify-Data/"><button>Reset</button></a>
-            <button onclick="authorizeUser()" id='AuthButton'>Authorize User</button>
+        <body style="background-color:rgb(106, 138, 108);"></body>
+
+        <div class="header">
+            <h1>Spoopify Test</h1>
+            <p>This is the spotify test website.</p>
+        </div>
+        <div class="chunk">
+            <p>
+                <!--<a id=ResetButton href="https://alphaq13.github.io/Spotify-Data/"><button>Reset</button></a>-->
+                <a id=ResetButton href=SPOTIFY_REDIRECT_URI><button>Reset</button></a>
+                <button onclick="authorizeUser()" id='AuthButton'>Authorize User</button>
 
 
-
-            <button onclick='getSpotify("https\:\/\/api.spotify.com/v1/me")'>User Info</button>
-            <button onclick='getSpotify("https\:\/\/api.spotify.com/v1/me/top/tracks?limit=3")'>Top Tracks</button>
-        </p> 
-        </p>
-            <textarea id='OutputTextArea' rows="30" cols="100" wrap="soft">Output</textarea>
-        </p>
+                
+                <button onclick='getSpotify("/me")'>User Info</button>
+                <button onclick='getTopTracks(50)'>Top Tracks</button>
+            </p>
+            <p>
+                <textarea id='OutputTextArea' rows="30" cols="100" wrap="soft">Output</textarea>
+            </p>
+        </div>
     </body>
-
-    <script>
-"use strict";
-var accessToken = null;
-var curUserID = null;
-
-function authorizeUser() {
-    //var scopes = 'playlist-read-private playlist-modify-private playlist-modify-public';
-    const scopesList = ['ugc-image-upload',
-                'user-read-recently-played',
-                'user-top-read',
-                'user-read-playback-position',
-                'user-read-playback-state',
-                'user-modify-playback-state',
-                'user-read-currently-playing',
-                'app-remote-control',
-                'streaming',
-                'playlist-modify-public',
-                'playlist-modify-private',
-                'playlist-read-private',
-                'playlist-read-collaborative',
-                'user-follow-modify',
-                'user-follow-read',
-                'user-library-modify',
-                'user-library-read',
-                'user-read-email',
-                'user-read-private'];
-    var scopes = scopesList.join(' ');
-    //var scopes = string.concat()
-
-    var url = 'https://accounts.spotify.com/authorize?client_id=' + SPOTIFY_CLIENT_ID +
-        '&response_type=token' +
-        '&scope=' + encodeURIComponent(scopes) +
-        '&redirect_uri=' + encodeURIComponent(SPOTIFY_REDIRECT_URI);
-    document.location = url;
-}
-
-function parseArgs() {
-    var hash = location.hash.replace(/#/g, '');
-    var all = hash.split('&');
-    var args = {};
-    _.each(all, function(keyvalue) {
-        var kv = keyvalue.split('=');
-        var key = kv[0];
-        var val = kv[1];
-        args[key] = val;
-    });
-    return args;
-}
-
-function fetchCurrentUserProfile(callback) {
-    var url = 'https://api.spotify.com/v1/me';
-    getSpotify(url, null, callback);
-}
-
-function getSpotify(url, data=null, callback=sendOutput) {
-    $.ajax(url, {
-        dataType: 'json',
-        data: data,
-        headers: {
-            'Authorization': 'Bearer ' + accessToken
-        },
-        success: function(r) {
-            callback(r);
-        },
-        error: function(r) {
-            callback(null);
-        }
-    });
-}
-
-function sendOutput(text) {
-    document.getElementById('OutputTextArea').innerHTML = JSON.stringify(text, null, 3)
-}
-
-$(document).ready(
-
-    function() {
-        //songTable = initTable();
-        var args = parseArgs();
-
-
-        if ('error' in args) {
-            error("Sorry, I can't read your playlists from Spotify without authorization");
-            $("#go").show();
-            $("#go").on('click', function() {
-                authorizeUser();
-            });
-        } else if ('access_token' in args) {
-            // USER IS AUTHENTICATED
-
-            accessToken = args['access_token'];
-            $(".worker").hide();
-            fetchCurrentUserProfile(function(user) {
-                if (user) {
-                    curUserID = user.id;
-                    $("#who").text(user.id);
-                    //loadPlaylists(user.id);
-                } else {
-                    error("Trouble getting the user profile");
-                }
-            });
-            
-            // hide auth button
-            document.getElementById('AuthButton').style.display = 'none';
-
-            alert("you've been authenticated")
-        } else {
-            // USER NOT YET AUTHENTICATED
-            /*
-            $("#go").show();
-            $("#go").on('click', function() {
-                authorizeUser();
-            });
-            */
-        }
-        /*
-        $("#save,#dropSave").on('click', function() {
-            savePlaylist(curPlaylist, true);
-        });
-        $("#dropOverwrite").on('click', function() {
-            savePlaylist(curPlaylist, false);
-        });
-
-        $("#pick").on('click', function() {
-            showPlaylists();
-        });
-
-        $.fn.dataTable.ext.search.push(playlistFilter);
-        $('#min-bpm,#max-bpm,#include-double').on('keyup change', function() {
-            songTable.draw();
-            updateSaveButtonState();
-        });
-        */
-    }
-);
-
-</script>
 </html>
